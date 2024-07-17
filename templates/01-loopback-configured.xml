@@ -1,0 +1,39 @@
+<config-template xmlns="http://tail-f.com/ns/config/1.0"
+                servicepoint="nanotest-servicepoint"
+                componenttype="ncs:self"
+                state="nanotest:loopback-configured">
+  <devices xmlns="http://tail-f.com/ns/ncs">
+    <device>
+      <name>{/dev1}</name>
+      <config>
+        <interface xmlns="http://tail-f.com/ned/cisco-ios-xr">
+          <Loopback>
+            <id>0</id>
+            <ipv4>
+              <address>
+                <ip>{/dev1-loop}</ip>
+                <mask>255.255.255.255</mask>
+              </address>
+            </ipv4>
+          </Loopback>
+        </interface>
+      </config>
+    </device>
+    <device>
+      <name>{/dev2}</name>
+      <config>
+        <interface xmlns="http://tail-f.com/ned/cisco-ios-xr">
+          <Loopback>
+            <id>0</id>
+            <ipv4>
+              <address>
+                <ip>{/dev2-loop}</ip>
+                <mask>255.255.255.255</mask>
+              </address>
+            </ipv4>
+          </Loopback>
+        </interface>
+      </config>
+    </device>
+</devices>
+</config-template>

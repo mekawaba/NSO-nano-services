@@ -1,0 +1,150 @@
+module nanotest {
+
+  namespace "http://example.com/nanotest";
+  prefix nanotest;
+
+  import ietf-inet-types {
+    prefix inet;
+  }
+  import tailf-common {
+    prefix tailf;
+  }
+  import tailf-ncs {
+    prefix ncs;
+  }
+
+  description
+    "Bla bla...";
+
+  revision 2016-01-01 {
+    description
+      "Initial revision.";
+  }
+
+  list nanotest {
+    description "This is an RFS skeleton service";
+
+    key name;
+    leaf name {
+      tailf:info "Unique service id";
+      tailf:cli-allow-range;
+      type string;
+    }
+
+    uses ncs:nano-plan-data;
+    uses ncs:service-data;
+    ncs:servicepoint nanotest-servicepoint;
+
+    // may replace this with other ways of refering to the devices.
+    leaf dev1 {
+      type leafref {
+        path "/ncs:devices/ncs:device/ncs:name";
+      }
+    }
+    leaf dev2 {
+      type leafref {
+        path "/ncs:devices/ncs:device/ncs:name";
+      }
+    }
+
+    // replace with your own stuff here
+    leaf dev1-loop {
+      type inet:ipv4-address;
+    }
+    leaf dev2-loop {
+      type inet:ipv4-address;
+    }
+    leaf as {
+      type uint16{
+        range "100..300"{
+          error-message "AS number must be within 100 to 300";
+              }
+    }
+    }
+    // flag for nano service
+    leaf if-configured {
+      type boolean;
+      // config false;
+    }
+
+    // Action YANG
+    tailf:action checkBGP {
+      tailf:info "Check BGP stetus";
+      tailf:actionpoint checkBGP-point;
+      output{
+        leaf dev1 {
+          type string;
+        }
+        leaf dev2 {
+          type string;
+        }
+      }
+    }
+
+    tailf:action pingLoopback {
+      tailf:info "Check Loopback reachability";
+      tailf:actionpoint pingLoopback-point;
+      output{
+        leaf dev1 {
+          type string;
+        }
+        leaf dev2 {
+          type string;
+        }
+        leaf result {
+            type boolean;
+        }
+      }
+    }
+  }
+  // Nano service のステータスを定義
+  identity loopback-configured {
+    base ncs:plan-state;
+  }
+  identity bgp-configured {
+    base ncs:plan-state;
+  }
+
+  ncs:plan-outline nanotest-plan {
+    description "Plan file for nanotest";
+
+    ncs:component-type "ncs:self" {
+      ncs:state "ncs:init";
+      ncs:state "nanotest:loopback-configured" {
+        ncs:create {
+          ncs:nano-callback;
+          ncs:post-action-node "$SERVICE" {
+            ncs:action-name "pingLoopback";
+          //  ncs:result-expr "result = 'true'";
+          }
+        }
+      }
+      ncs:state "nanotest:bgp-configured" {
+        ncs:create {
+          ncs:nano-callback;
+          ncs:pre-condition {
+            // Wait for a state to become true
+            ncs:monitor "$SERVICE" {
+            ncs:trigger-expr "if-configured = 'true'";
+            }
+          }
+          ncs:post-action-node "$SERVICE" {
+            ncs:action-name "checkBGP";
+          //  ncs:result-expr "result = 'true'";
+          }
+        }
+      }
+      ncs:state "ncs:ready";
+    }
+  }
+
+  ncs:service-behavior-tree nanotest-servicepoint {
+    description "A static, single component behavior tree";
+    ncs:plan-outline-ref "nanotest:nanotest-plan";
+    ncs:selector {
+      ncs:create-component "'self'" {
+        ncs:component-type-ref "ncs:self";
+      }
+    }
+  }
+}
